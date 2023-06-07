@@ -1,0 +1,72 @@
+defmodule HelloWeb.ChunksController do
+  use HelloWeb, :controller
+  require Logger
+  alias :mnesia, as: Mnesia
+  
+  def apreta(conn, params) do
+    #      Logger.debug(fn -> "uncooked params: #{params}" end)
+    Mnesia.start()
+    Mnesia.create_schema([node])
+    Mnesia.create_table(Count, [attributes: [:id, :count, :lista]])
+#    Mnesia.start()
+    json conn, %{}
+  end
+  def apreta2(conn, params) do
+    data_to_write = fn ->
+       Mnesia.write({Count, 1, 0, []})
+    end
+    Mnesia.transaction(data_to_write)
+    json conn, %{}
+  end
+  def testread(conn, params) do
+    rdata = fn ->
+      Mnesia.read({Count, 1})
+    end
+    resulta = case Mnesia.transaction(rdata) do
+		{:atomic, [{Count, 1, x, y }] = resulta} -> [x,y]
+		_ -> [99,99]
+	      end
+    json conn, resulta
+  end
+  def chunkz(conn, %{"count" => c} = params) do
+    fname = "pcm007" <> Integer.to_string(c) <> ".wav"
+    update_data = fn ->                  
+	[{Count, _, _, rst}] = Mnesia.read({Count, 1})
+	Mnesia.write({Count, 1, fname, [ fname |rst]})
+    end
+    Mnesia.transaction(update_data)
+#    rdata = fn ->
+#      Mnesia.read({Count, 1})
+#    end
+#    {:atomic, [{Count, 1, x, [y | _]}]} = Mnesia.transaction(rdata)
+#    Logger.info("resulta x: #{x}")
+#    Logger.info("resulta y: #{y}")
+    #Logger.debug(fn -> "transaction result: #{x2}" end)
+#    {:atomic, [{Count, 1, x, [y | _]}]} = Mnesia.transaction(rdata)
+ #      json conn, %{"x" => x, "y" => y}
+    json conn, %{"resulta" => "ok"}
+  end
+  
+
+  def chunks(conn, _params) do
+    #    render(conn, "index.html") # for browser
+    #    chunks = []
+    # nodename = node() # works but forget about it
+    users = [
+      %{name: "Joe",
+        email: "joe@example.com",
+        password: "topsecret",
+        stooge: "moe"},
+      %{name: "Anne",
+        email: "anne@example.com",
+        password: "guessme",
+        stooge: "larry"},
+      %{name: "Franklin",
+        email: "franklin@example.com",
+        password: "guessme",
+        stooge: "curly"},
+    ]
+        json conn, users
+#     json conn, {users,nodename } # WONT WORK "encoder not implemented" for this weird thang I contrived
+  end
+end

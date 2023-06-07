@@ -1,0 +1,61 @@
+defmodule HelloWeb.Router do
+  use HelloWeb, :router
+
+  pipeline :browser do
+    plug :accepts, ["html"]
+    plug :fetch_session
+    plug :fetch_flash
+    plug :protect_from_forgery
+    plug :put_secure_browser_headers
+  end
+
+  pipeline :api do
+#    plug :accepts, ["json"]
+    #    plug CORSPlug, origin: "http://localhost:5005"
+    plug CORSPlug, origin: ["*", "http://127.0.0.1:5005", "http://127.0.0.1:3077", "https://perfect-puma-68.serverless.social"]
+    
+    plug :accepts, ["json"]
+#      plug Corsica, origins: [
+#	"http://localhost:4000",
+#	"http://localhost:5005",
+#	"http://localhost:8080"
+ #     ], allow_headers: ["accept", "content-type", "authorization"], allow_credentials: true, log: [rejected: :error, invalid: :warn, accepted: :debug]
+  end
+
+#  scope "/", HelloWeb do
+#    pipe_through :browser
+
+#    get "/", PageController, :index
+#  end
+
+  # Other scopes may use custom stacks.
+  scope "/api/v1", HelloWeb do
+    pipe_through :api
+    resources "/chunks", ChunksController
+    get "/chunks", ChunksController, :chunks
+    get "/apreta", ChunksController, :apreta
+    get "/apreta2", ChunksController, :apreta2
+    get "/testread", ChunksController, :testread
+    post "/chunkz", ChunksController, :chunkz
+  end
+
+  # Enables LiveDashboard only for development
+  #
+  # If you want to use the LiveDashboard in production, you should put
+  # it behind authentication and allow only admins to access it.
+  # If your application does not have an admins-only section yet,
+  # you can use Plug.BasicAuth to set up some basic authentication
+  # as long as you are also using SSL (which you should anyway).
+  if Mix.env() in [:dev, :test] do
+    import Phoenix.LiveDashboard.Router
+
+    scope "/" do
+      pipe_through :browser
+      live_dashboard "/dashboard", metrics: HelloWeb.Telemetry
+    end
+    scope "/api/v1", ApiExample do
+      pipe_through :api
+      get "/users", UserController, :index
+    end
+  end
+end
